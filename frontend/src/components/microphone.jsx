@@ -21,8 +21,31 @@ function Microphone () {
         }
     }, [isRecording]);
 
-    const { status, startRecording, stopRecording, mediaBlobUrl } = useReactMediaRecorder({audio: true, askPermissionOnMount: true});
+    const { startRecording, stopRecording, mediaBlobUrl } = useReactMediaRecorder({audio: true, askPermissionOnMount: true});
 
+    const submitToServer = async () => {
+        const response = await fetch(mediaBlobUrl);
+        const blob = await response.blob();
+        
+        const formData = new FormData();
+        formData.append('file', blob, 'audio.mp3');
+
+        try {
+            const response = await fetch('http://127.0.0.1:8080/submit', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to upload audio')
+            }
+
+            const data = await response.json();
+            console.log('Audio uploaded successfully:', data);
+        } catch (e) {
+            console.error('Error uploading audio: ', e)
+        }
+    }
     
     return(
     <>
@@ -35,8 +58,10 @@ function Microphone () {
                     </Button>
                 </div>
                 <audio src={mediaBlobUrl} controls/>
+                <Button onClick={submitToServer} className={'bg-blue-400 rounded-2xl enabled:hover:bg-blue-500'}>
+                    Submit
+                </Button>
             </div>
-            
         </div>
     </>
     );
